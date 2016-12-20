@@ -140,16 +140,17 @@ class RNNCell(object):
       state_size_flat = nest.flatten(state_size)
       zeros_flat = [
           array_ops.zeros(
-              array_ops.pack(_state_size_with_prefix(s, prefix=[batch_size])),
-              dtype=dtype)
-          for s in state_size_flat]
+              array_ops.stack(_state_size_with_prefix(
+                  s, prefix=[batch_size])),
+              dtype=dtype) for s in state_size_flat
+      ]
       for s, z in zip(state_size_flat, zeros_flat):
         z.set_shape(_state_size_with_prefix(s, prefix=[None]))
       zeros = nest.pack_sequence_as(structure=state_size,
                                     flat_sequence=zeros_flat)
     else:
       zeros_size = _state_size_with_prefix(state_size, prefix=[batch_size])
-      zeros = array_ops.zeros(array_ops.pack(zeros_size), dtype=dtype)
+      zeros = array_ops.zeros(array_ops.stack(zeros_size), dtype=dtype)
       zeros.set_shape(_state_size_with_prefix(state_size, prefix=[None]))
 
     return zeros
@@ -203,8 +204,10 @@ class GRUCell(RNNCell):
       with vs.variable_scope("gates"):  # Reset gate and update gate.
         # We start with bias of 1.0 to not reset and not update.
         r, u = array_ops.split(
-            1, 2, _linear([inputs, state], 2 * self._num_units, True, 1.0,
-                          scope=scope))
+            value=_linear(
+                [inputs, state], 2 * self._num_units, True, 1.0, scope=scope),
+            num_or_size_splits=2,
+            axis=1)
         r, u = sigmoid(r), sigmoid(u)
       with vs.variable_scope("candidate"):
         c = self._activation(_linear([inputs, r * state],
@@ -288,11 +291,11 @@ class BasicLSTMCell(RNNCell):
       if self._state_is_tuple:
         c, h = state
       else:
-        c, h = array_ops.split(1, 2, state)
+        c, h = array_ops.split(value=state, num_or_size_splits=2, axis=1)
       concat = _linear([inputs, h], 4 * self._num_units, True, scope=scope)
 
       # i = input_gate, j = new_input, f = forget_gate, o = output_gate
-      i, j, f, o = array_ops.split(1, 4, concat)
+      i, j, f, o = array_ops.split(value=concat, num_or_size_splits=4, axis=1)
 
       new_c = (c * sigmoid(f + self._forget_bias) + sigmoid(i) *
                self._activation(j))
@@ -449,7 +452,8 @@ class LSTMCell(RNNCell):
       # i = input_gate, j = new_input, f = forget_gate, o = output_gate
       lstm_matrix = _linear([inputs, m_prev], 4 * self._num_units, bias=True,
                             scope=scope)
-      i, j, f, o = array_ops.split(1, 4, lstm_matrix)
+      i, j, f, o = array_ops.split(
+          value=lstm_matrix, num_or_size_splits=4, axis=1)
 
       # Diagonal connections
       if self._use_peepholes:
