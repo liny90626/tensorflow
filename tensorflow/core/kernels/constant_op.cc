@@ -239,7 +239,7 @@ class ZerosLikeOp : public OpKernel {
       ZerosLikeOp<dev##Device, type>)
 
 #define REGISTER_CPU(type) REGISTER_KERNEL(type, CPU)
-TF_CALL_ALL_TYPES(REGISTER_CPU);
+TF_CALL_POD_STRING_TYPES(REGISTER_CPU);
 #undef REGISTER_CPU
 
 #ifdef TENSORFLOW_USE_SYCL
@@ -304,4 +304,9 @@ REGISTER_KERNEL_BUILDER(Name("Placeholder").Device(DEVICE_GPU), PlaceholderOp);
 REGISTER_KERNEL_BUILDER(Name("PlaceholderV2").Device(DEVICE_GPU),
                         PlaceholderOp);
 
+#if TENSORFLOW_USE_SYCL
+REGISTER_KERNEL_BUILDER(Name("Placeholder").Device(DEVICE_SYCL), PlaceholderOp);
+REGISTER_KERNEL_BUILDER(Name("PlaceholderV2").Device(DEVICE_SYCL),
+                        PlaceholderOp);
+#endif // TENSORFLOW_USE_SYCL
 }  // namespace tensorflow
