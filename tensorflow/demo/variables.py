@@ -1,5 +1,7 @@
 import tensorflow as tf
-state = tf.Variable(0, name="test")
+state = tf.Variable(1, name="test")
+#print(state.name)
+
 one = tf.constant(1)
 
 new_value = tf.add(state, one);
