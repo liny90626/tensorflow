@@ -17,6 +17,7 @@ y = tf.nn.softmax(tf.matmul(x, W) + b)
 # 交叉熵(衡量成本/开销)
 yr = tf.placeholder("float", [None, 10])
 crossEntropy = -tf.reduce_sum(yr*tf.log(y))
+#crossEntropy = tf.reduce_mean(tf.square(yr - y))
 
 # 训练方法
 trainStep = tf.train.GradientDescentOptimizer(0.01).minimize(crossEntropy)
